@@ -2,14 +2,17 @@ package com.cos.security1.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.cos.security1.auth.PrincipalDetails;
 import com.cos.security1.model.User;
 import com.cos.security1.repository.UserRepository;
 
@@ -22,6 +25,35 @@ public class IndexController {
 	@Autowired
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
 	
+	@GetMapping("/test/login")
+	public @ResponseBody String testLogin(Authentication authentication,
+			@AuthenticationPrincipal PrincipalDetails userDetails) { // DI(의존성 주입) 
+		//Authentication 객체 안에 Principal이 있음
+		//@AuthenticationPrincipal 이용해서 세션정보에 접근할 수 있음
+		//UserDetails 나 PrincipalDetails나 같은 타입임(extends)
+		System.out.println("/test/login ===================");
+		// 구글 로그인은 아래에서 오류가 난다.(캐스팅이 안됨)
+		PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+		System.out.println("authentication : "+principalDetails.getUser()); // 유저 정보를 갖고 있음
+		
+		System.out.println("userDetails : "+userDetails.getUsername());
+		return "세션 정보 확인하기";
+	}
+	
+	@GetMapping("/test/oauth/login")
+	public @ResponseBody String testOAuthLogin(Authentication authentication,
+			@AuthenticationPrincipal OAuth2User oauth) {
+		System.out.println("/test/login ===================");
+
+		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+		// OAuth 로그인을 하면 OAuth2User 객체가 들어온다.
+		System.out.println("authentication : "+oAuth2User.getAttributes()); // 유저 정보를 갖고 있음
+		// 위에거로 쓰려면 다운캐스팅 해야하는데 (OAuth2User)
+		// 다운 캐스팅 안해도 됨
+		System.out.println("oauth2User : "+oauth.getAttributes());
+		return "OAuth 세션 정보 확인하기";
+	}
+	
 	@GetMapping({"","/"})
 	public String index() {
 		// 찾는 폴더 => src/main/resources/
@@ -30,7 +62,10 @@ public class IndexController {
 	}
 	
 	@GetMapping("/user")
-	public @ResponseBody String user() {
+	public @ResponseBody String user(@AuthenticationPrincipal PrincipalDetails userDetails) {
+		// PrincipalDetails 혹은 UserDetails
+		// 구글로 로그인한 경우는 OAuth2User로 받아야함으로
+		// PrincipalDetails에서 implementation 해서 받는다.
 		return "user";
 	}
 	
