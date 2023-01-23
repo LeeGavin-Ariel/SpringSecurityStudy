@@ -22,6 +22,7 @@ public class IndexController {
 	@Autowired
 	private UserRepository userRepository;
 	
+	
 	@Autowired
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
 	
